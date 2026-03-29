@@ -1,37 +1,125 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(express.json({ limit: "10mb" }));
 
 const dataDir = path.join(process.cwd(), "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
 const ordersPath = path.join(dataDir, "orders.json");
+const menusPath = path.join(dataDir, "menus.json");
 
-const COMBOS = {
-  "250": { code: "250", nameHe: "קומבו מיני 250", nameRu: "Комбо мини 250", rules: [{ category: "free", count: 3 }, { category: "main", count: 2 }] },
-  "380": { code: "380", nameHe: "קומבו 380", nameRu: "Меню 380", rules: [{ category: "free", count: 4 }, { category: "main", count: 2 }, { category: "side", count: 2 }] },
-  "450": { code: "450", nameHe: "קומבו 450", nameRu: "Меню 450", rules: [{ category: "free", count: 4 }, { category: "main", count: 2 }, { category: "side", count: 2 }] }
+const DEFAULT_MENUS = {
+  combos: {
+    "250": {
+      code: "250",
+      nameHe: "קומבו מיני 250",
+      nameRu: "Комбо мини 250",
+      allowDuplicates: true,
+      rules: [
+        { category: "free", count: 3 },
+        { category: "main", count: 2 }
+      ]
+    },
+    "380": {
+      code: "380",
+      nameHe: "קומבו 380",
+      nameRu: "Меню 380",
+      allowDuplicates: true,
+      rules: [
+        { category: "free", count: 4 },
+        { category: "main", count: 2 },
+        { category: "side", count: 2 }
+      ]
+    },
+    "450": {
+      code: "450",
+      nameHe: "קומבו 450",
+      nameRu: "Меню 450",
+      allowDuplicates: true,
+      rules: [
+        { category: "free", count: 4 },
+        { category: "main", count: 2 },
+        { category: "side", count: 2 }
+      ]
+    }
+  },
+  items: [
+    { name: "Борщ с мясом", category: "free" },
+    { name: "Солянка мясная", category: "free" },
+    { name: "Салат с крабовыми палочками", category: "free" },
+    { name: "Салат Цезарь с курицей", category: "free" },
+    { name: "Пюре", category: "free" },
+    { name: "Рис припущенный", category: "free" },
+    { name: "Картошка с чесноком", category: "free" },
+    { name: "Спагетти с соусом песто", category: "free" },
+    { name: "Блины с вишнями", category: "free" },
+    { name: "Десерт тирамису", category: "free" },
+    { name: "Ноги куриные гриль", category: "main" },
+    { name: "Котлеты домашние мясные", category: "main" },
+    { name: "Мушт на гриле", category: "main" },
+    { name: "Язык с овощами под соусом терияки", category: "main" },
+    { name: "Салат щетка со свеклой и капустой", category: "free" },
+    { name: "Салат с сезонными овощами", category: "free" },
+    { name: "Салат с фасолью и языком", category: "free" },
+    { name: "Салат итальянский с грибами и пастой", category: "free" },
+    { name: "Икра свекольная по шеф рецепту", category: "free" },
+    { name: "Борщ горячий с говядиной", category: "free" },
+    { name: "Солянка домашняя мясная", category: "free" },
+    { name: "Крем суп томатный с кокосовым кремом, базиликом и сухариками", category: "free" },
+    { name: "Маковые палочки из творога", category: "free" },
+    { name: "Каша пшенная с тыквой", category: "free" },
+    { name: "Вареники с картошкой и жареным луком", category: "free" },
+    { name: "Пышки с сгущенкой", category: "free" },
+    { name: "Ленивые голубцы с говядиной", category: "main" },
+    { name: "Рыбные котлеты с зеленью", category: "main" },
+    { name: "Котлеты куриные запеченные", category: "main" },
+    { name: "Бефстроганов из птицы с грибами", category: "main" },
+    { name: "Картофель отварной с укропом", category: "side" },
+    { name: "Кус кус с овощами", category: "side" },
+    { name: "Салат шуба классическая", category: "free" },
+    { name: "Салат оливье с курицей", category: "free" },
+    { name: "Трубочки с заварным кремом", category: "free" },
+    { name: "Люля кебаб из говядины", category: "main" },
+    { name: "Зразы рыбные с яйцом", category: "main" },
+    { name: "Телятина в прованских травах", category: "main" },
+    { name: "Мукпац с курицей и овощами", category: "main" },
+    { name: "Батата запечённая с розмарином", category: "side" },
+    { name: "Фасоль зеленая", category: "side" }
+  ]
 };
 
-const ITEM_CATEGORIES = {
-  "Борщ с мясом":"free","Солянка мясная":"free","Салат с крабовыми палочками":"free","Салат Цезарь с курицей":"free",
-  "Пюре":"free","Рис припущенный":"free","Картошка с чесноком":"free","Спагетти с соусом песто":"free","Блины с вишнями":"free","Десерт тирамису":"free",
-  "Ноги куриные гриль":"main","Котлеты домашние мясные":"main","Мушт на гриле":"main","Язык с овощами под соусом терияки":"main",
-  "Салат щетка со свеклой и капустой":"free","Салат с сезонными овощами":"free","Салат с фасолью и языком":"free","Салат итальянский с грибами и пастой":"free",
-  "Икра свекольная по шеф рецепту":"free","Борщ горячий с говядиной":"free","Солянка домашняя мясная":"free","Крем суп томатный с кокосовым кремом, базиликом и сухариками":"free",
-  "Маковые палочки из творога":"free","Каша пшенная с тыквой":"free","Вареники с картошкой и жареным луком":"free","Пышки с сгущенкой":"free",
-  "Ленивые голубцы с говядиной":"main","Рыбные котлеты с зеленью":"main","Котлеты куриные запеченные":"main","Бефстроганов из птицы с грибами":"main",
-  "Картофель отварной с укропом":"side","Кус кус с овощами":"side",
-  "Салат шуба классическая":"free","Салат оливье с курицей":"free","Трубочки с заварным кремом":"free","Люля кебаб из говядины":"main",
-  "Зразы рыбные с яйцом":"main","Телятина в прованских травах":"main","Мукпац с курицей и овощами":"main","Батата запечённая с розмарином":"side","Фасоль зеленая":"side"
-};
-
+function ensureMenus() {
+  if (!fs.existsSync(menusPath)) {
+    fs.writeFileSync(menusPath, JSON.stringify(DEFAULT_MENUS, null, 2), "utf-8");
+  }
+}
+function readMenus() {
+  ensureMenus();
+  try {
+    return JSON.parse(fs.readFileSync(menusPath, "utf-8"));
+  } catch {
+    return DEFAULT_MENUS;
+  }
+}
+function writeMenus(menus) {
+  fs.writeFileSync(menusPath, JSON.stringify(menus, null, 2), "utf-8");
+}
 function readOrders() {
   if (!fs.existsSync(ordersPath)) return [];
-  try { return JSON.parse(fs.readFileSync(ordersPath, "utf-8")); } catch { return []; }
+  try {
+    return JSON.parse(fs.readFileSync(ordersPath, "utf-8"));
+  } catch {
+    return [];
+  }
 }
 function writeOrders(orders) {
   fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2), "utf-8");
@@ -44,18 +132,31 @@ function nextOrderNumber() {
   }, 1000);
   return `ORD-${maxNum + 1}`;
 }
-function normalize(name="") { return String(name).trim().replace(/\s+/g," "); }
-function categorizeItem(name) { return ITEM_CATEGORIES[normalize(name)] || "unknown"; }
-function validateCombo(comboCode, items) {
-  const combo = COMBOS[comboCode];
+function normalize(name = "") {
+  return String(name).trim().replace(/\s+/g, " ");
+}
+function categorizeItem(name, menus) {
+  const hit = (menus.items || []).find((x) => normalize(x.name) === normalize(name));
+  return hit ? hit.category : "unknown";
+}
+function validateCombo(comboCode, items, menus) {
+  const combo = menus.combos?.[comboCode];
   if (!combo) return { ok: true, errors: [] };
+
   const counts = { free: 0, main: 0, side: 0, unknown: 0 };
-  for (const item of items) counts[categorizeItem(item.name)] = (counts[categorizeItem(item.name)] || 0) + 1;
-  const errors = [];
-  for (const rule of combo.rules) {
-    const got = counts[rule.category] || 0;
-    if (got !== rule.count) errors.push({ category: rule.category, expected: rule.count, got });
+  for (const item of items) {
+    const cat = categorizeItem(item.name, menus);
+    counts[cat] = (counts[cat] || 0) + 1;
   }
+
+  const errors = [];
+  for (const rule of combo.rules || []) {
+    const got = counts[rule.category] || 0;
+    if (got !== Number(rule.count || 0)) {
+      errors.push({ category: rule.category, expected: Number(rule.count || 0), got });
+    }
+  }
+
   return { ok: errors.length === 0, errors, counts };
 }
 function aggregateItems(orders) {
@@ -70,17 +171,32 @@ function aggregateItems(orders) {
       map.set(key, existing);
     }
   }
-  return Array.from(map.values()).sort((a,b)=>a.name.localeCompare(b.name,"ru"));
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "ru"));
 }
 
-app.get("/api/meta", (_req,res)=>res.json({success:true, combos: COMBOS}));
-app.get("/api/next-order-number", (_req,res)=>res.json({success:true, orderNumber: nextOrderNumber()}));
+app.get("/api/meta", (_req, res) => res.json({ success: true, menus: readMenus() }));
 
-app.post("/api/orders", (req,res)=>{
+app.post("/api/meta", (req, res) => {
+  try {
+    const payload = req.body || {};
+    writeMenus(payload);
+    res.json({ success: true, menus: payload });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to save menus" });
+  }
+});
+
+app.get("/api/next-order-number", (_req, res) => {
+  res.json({ success: true, orderNumber: nextOrderNumber() });
+});
+
+app.post("/api/orders", (req, res) => {
   try {
     const payload = req.body || {};
     const items = Array.isArray(payload.items) ? payload.items : [];
-    const validation = validateCombo(payload.comboCode, items);
+    const menus = readMenus();
+    const validation = validateCombo(payload.comboCode, items, menus);
+
     const record = {
       id: Date.now(),
       orderNumber: payload.orderNumber || nextOrderNumber(),
@@ -90,41 +206,65 @@ app.post("/api/orders", (req,res)=>{
       deliveryDate: payload.deliveryDate || "",
       total: payload.total || "",
       comboCode: payload.comboCode || "",
-      items, validation, createdAt: new Date().toISOString()
+      items,
+      validation,
+      createdAt: new Date().toISOString()
     };
+
     const orders = readOrders();
     orders.push(record);
     writeOrders(orders);
-    res.json({success:true, record});
-  } catch (e) {
-    res.status(500).json({success:false, message:"Failed to save order"});
+
+    res.json({ success: true, record });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to save order" });
   }
 });
 
-app.get("/api/orders", (req,res)=>{
+app.get("/api/orders", (req, res) => {
   try {
     const sortBy = req.query.sortBy || "deliveryDate";
     const dir = req.query.dir === "asc" ? "asc" : "desc";
     let orders = readOrders();
-    orders.sort((a,b)=>{
-      const cmp = String(a[sortBy]||"").localeCompare(String(b[sortBy]||""), "he");
+
+    orders.sort((a, b) => {
+      const cmp = String(a[sortBy] || "").localeCompare(String(b[sortBy] || ""), "he");
       return dir === "asc" ? cmp : -cmp;
     });
-    res.json({success:true, orders});
+
+    res.json({ success: true, orders });
   } catch {
-    res.status(500).json({success:false, message:"Failed to load orders"});
+    res.status(500).json({ success: false, message: "Failed to load orders" });
   }
 });
 
-app.get("/api/summary", (req,res)=>{
+app.get("/api/summary", (req, res) => {
   try {
     const deliveryDate = String(req.query.deliveryDate || "").trim();
     let orders = readOrders();
-    if (deliveryDate) orders = orders.filter(o => String(o.deliveryDate || "") === deliveryDate);
-    res.json({success:true, ordersCount: orders.length, summary: aggregateItems(orders)});
+
+    if (deliveryDate) {
+      orders = orders.filter((o) => String(o.deliveryDate || "") === deliveryDate);
+    }
+
+    res.json({
+      success: true,
+      ordersCount: orders.length,
+      summary: aggregateItems(orders)
+    });
   } catch {
-    res.status(500).json({success:false, message:"Failed to build summary"});
+    res.status(500).json({ success: false, message: "Failed to build summary" });
   }
 });
 
-app.listen(PORT, ()=>console.log(`Server running on http://localhost:${PORT}`));
+const distPath = path.join(__dirname, "dist");
+
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
